@@ -6,7 +6,11 @@ import os
 import re
 import string
 import configparser
+import datetime as dt
 
+import pandas as pd
+
+today = str(dt.date.today())
 
 def list_files_in_directory(path):
     '''docstring for list_files_in_directory'''
@@ -62,3 +66,13 @@ def create_directory(folders, logger=None):
                 logger.info(e)
             else:
                 print(e)
+
+
+def save_res_dict_to_xlsx(res, filename, folder='results'):
+    '''docstring
+    # write to multiple sheets
+    '''
+    create_directory([folder])
+    with pd.ExcelWriter(folder + '/' + today + filename) as writer:
+        for sheet, df in res.items():
+            df.to_excel(writer, sheet_name=sheet)

@@ -12,14 +12,14 @@ TODO
 Author: William C. Wright
 '''
 
-import my_utils
+import collections
+import datetime as dt
+import configparser
+
 import pandas as pd
 import numpy as np
 
-import collections
-import datetime as dt
-
-import configparser
+import my_utils
 
 
 def lists_calc(list0, list1):
@@ -122,11 +122,11 @@ def run():
     df[cols_dict['groupby']] = df.category_x.apply(
         lambda x: x.split('/')[0].split(';')[0])
 
+    res = {}
+    res['cleaned_data'] = df
+    
     # generate and save pivot tables
-    folder = 'results'
-    my_utils.create_directory([folder])
-
-    pivot_df = df.groupby([cols_dict['groupby'], 'brand_name']).agg({
+    pivot_df = df.groupby(['brand_name', cols_dict['groupby']]).agg({
         cols_dict['price']: ['mean', 'sum'],
         cols_dict['stock']: ['mean', 'sum'],
         cols_dict['cost']: ['mean', 'sum'],
@@ -136,9 +136,7 @@ def run():
         'sum'
     })
     pivot_df.reset_index(inplace=True, drop=False)
-    pivot_df.to_csv(folder + '/' + today +
-                    '_inventory_value_pivot_table_with_brand.csv',
-                    index=False)
+    res['pivot_by_brand'] = pivot_df
 
     pivot_df = df.groupby([cols_dict['groupby']]).agg({
         cols_dict['price']: ['mean', 'sum'],
@@ -150,8 +148,10 @@ def run():
         'sum'
     })
     pivot_df.reset_index(inplace=True, drop=False)
-    pivot_df.to_csv(folder + '/' + today + '_inventory_value_pivot_table.csv',
-                    index=False)
+    res['pivot_by_category'] = pivot_df
+
+    filename = '_inventory_value_report.xlsx'
+    my_utils.save_res_dict_to_xlsx(res, filename)
     return 0
 
 
