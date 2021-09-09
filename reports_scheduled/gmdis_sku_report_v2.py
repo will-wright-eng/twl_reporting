@@ -30,21 +30,25 @@ def run():
     outputs = {}
     today = str(dt.datetime.today()).split(" ")[0]
 
+    # import configs
     config = my_utils.import_configs()
     config_dict = dict(config.items("dir_info"))
     path = config_dict["gen_path"]
+
+    # load most recent export csv
     order_path = my_utils.most_recent_order_file(path)
     print("\n", order_path, "\n")
     df = pd.read_csv(order_path)
 
+    ## CLEAN DF
     # convert datetime
     df["Order Date"] = pd.to_datetime(df["Order Date"])
     df = df.loc[df["Order Date"] > "2020-08-01"]
-    outputs["raw_data_post_2020-08-01"] = df
 
     df.reset_index(inplace=True, drop=True)
     df.columns = [i.strip() for i in list(df)]
 
+    # expand product details into order lines table
     df_products = []
     prods = []
     for row in range(len(df)):
@@ -57,17 +61,19 @@ def run():
 
     ndf = pd.DataFrame([item for sublist in prods for item in sublist])
 
+    # filter by cols with high fill rates (over 90%)
     metadf = pd.DataFrame([list(ndf), ndf.dtypes, ndf.count()]).T
     metadf.columns = ["name", "type", "counts"]
     metadf.sort_values("counts", ascending=False, inplace=True)
     cols = list(metadf.loc[metadf.counts > len(ndf) * 0.9].name)
-
     ndf = ndf[[col for col in list(ndf) if col in cols]]
 
+    # outer join order lines with order details table
     ndf = ndf.merge(df, how="outer", on="Order ID")
     ndf.columns = [i.strip() for i in list(ndf)]
     ndf["Product SKU"] = ndf["Product SKU"].apply(lambda x: str(x).strip())
 
+    outputs["raw_data_post_2020-08-01"] = df
     outputs["order_lines_table"] = ndf
 
     ndf["gmdis_bool"] = ndf["Product SKU"].apply(lambda x: "GMDIS" in x)
