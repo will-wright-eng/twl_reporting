@@ -143,7 +143,7 @@ def run():
 
     filename = "_inventory_value_report.xlsx"
     my_utils.save_res_dict_to_xlsx(res, filename)
-    return 0
+    return True
 
 
 if __name__ == "__main__":
